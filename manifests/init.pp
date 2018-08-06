@@ -309,6 +309,7 @@ class murano(
   $service_host               = '127.0.0.1',
   $service_port               = '8082',
   $use_ssl                    = false,
+  $service_protocol        = undef,
   $cert_file                  = $::os_service_default,
   $key_file                   = $::os_service_default,
   $ca_file                    = $::os_service_default,
@@ -365,9 +366,13 @@ deprecated. Please use murano::default_transport_url instead.")
     tag    => ['openstack', 'murano-package'],
   }
 
-  $service_protocol = $use_ssl ? {
-    true    => 'https',
-    default => 'http',
+  if $service_protocol {
+  $_real_service_protocol = $service_protocol
+  } else {
+  $_real_service_protocol = $use_ssl ? {
+      true    => 'https',
+      default => 'http',
+  }
   }
 
   resources { 'murano_config':
@@ -409,7 +414,7 @@ deprecated. Please use murano::default_transport_url instead.")
   }
 
   murano_config {
-    'murano/url' :                           value => "${service_protocol}://${service_host}:${service_port}";
+    'murano/url' :                           value => "${_real_service_protocol}://${service_host}:${service_port}";
 
     'engine/use_trusts' :                    value => $use_trusts;
 

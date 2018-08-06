@@ -42,6 +42,13 @@ class murano::api(
     } else {
       $service_ensure = 'stopped'
     }
+
+    service { 'murano-api':
+    ensure => $service_ensure,
+    name   => $::murano::params::api_service_name,
+    enable => $enabled,
+    tag    => 'murano-service',
+   }
   }
 
   murano_config {
@@ -54,12 +61,4 @@ class murano::api(
     name   => $::murano::params::api_package_name,
     tag    => ['openstack', 'murano-package'],
   }
-
-  service { 'murano-api':
-    ensure => $service_ensure,
-    name   => $::murano::params::api_service_name,
-    enable => $enabled,
-    tag    => 'murano-service',
-  }
-
 }
