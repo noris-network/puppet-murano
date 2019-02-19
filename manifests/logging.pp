@@ -12,6 +12,14 @@
 #   Use syslog for logging.
 #   (Optional) Defaults to $::os_service_default.
 #
+# [*use_json*]
+#   (optional) Use json for logging
+#   Defaults to $::os_service_default
+#
+# [*use_journal*]
+#   (optional) Use journal for logging
+#   Defaults to $::os_service_default
+#
 # [*use_stderr*]
 #   (optional) Use stderr for logging
 #   Defaults to $::os_service_default
@@ -88,6 +96,8 @@
 class murano::logging(
   $debug                         = $::os_service_default,
   $use_syslog                    = $::os_service_default,
+  $use_json                      = $::os_service_default,
+  $use_journal                   = $::os_service_default,
   $use_stderr                    = $::os_service_default,
   $log_facility                  = $::os_service_default,
   $log_dir                       = '/var/log/murano',
@@ -111,12 +121,18 @@ class murano::logging(
   $use_syslog_real   = pick($::murano::use_syslog, $use_syslog)
   $use_stderr_real   = pick($::murano::use_stderr, $use_stderr)
   $log_facility_real = pick($::murano::log_facility, $log_facility)
-  $log_dir_real      = pick($::murano::log_dir, $log_dir)
+  if $log_dir != '' {
+    $log_dir_real = pick($::murano::log_dir,$log_dir)
+  } else {
+    $log_dir_real = $log_dir
+  }
   $debug_real        = pick($::murano::debug, $debug)
 
   oslo::log { 'murano_config':
     debug                         => $debug_real,
     use_syslog                    => $use_syslog_real,
+    use_json                      => $use_json,
+    use_journal                   => $use_journal,
     use_stderr                    => $use_stderr_real,
     log_dir                       => $log_dir_real,
     syslog_log_facility           => $log_facility_real,

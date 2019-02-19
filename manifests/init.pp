@@ -135,6 +135,10 @@
 #   for murano rabbit server.
 #   Defaults to $::os_service_default
 #
+# [*service_url*]
+#  (Optional) URL for the API service
+#  Defaults to undef
+#
 # [*service_host*]
 #  (Optional) Host for murano to listen on
 #  Defaults to '127.0.0.1'
@@ -182,6 +186,10 @@
 # [*packages_service*]
 #  (Optional) The service to store murano packages.
 #  Defaults to $::os_service_default.
+#
+# [*amqp_durable_queues*]
+#   (optional) Whether to use durable queues in AMQP.
+#   Defaults to $::os_service_default.
 #
 # == database configuration options
 #
@@ -233,7 +241,15 @@
 #
 # [*auth_uri*]
 #  (Optional) Public identity endpoint
-#  Defaults to 'http://127.0.0.1:5000'
+#  Defaults to 'http://127.0.0.1:5000/v3'
+#
+# [*user_domain_name*]
+#   (Optional) Name of domain for $username
+#   Defaults to 'Default'
+#
+# [*project_domain_name*]
+#   (Optional) Name of domain for $project_name
+#   Defaults to 'Default'
 #
 # [*memcached_servers*]
 #   (optinal) a list of memcached server(s) to use for caching. If left
@@ -306,6 +322,7 @@ class murano(
   $rabbit_own_vhost           = 'murano',
   $rabbit_own_use_ssl         = $::os_service_default,
   $rabbit_own_ca_certs        = $::os_service_default,
+  $service_url                = undef,
   $service_host               = '127.0.0.1',
   $service_port               = '8082',
   $use_ssl                    = false,
@@ -329,9 +346,12 @@ class murano(
   $sync_db                    = true,
   $admin_user                 = 'murano',
   $admin_tenant_name          = 'services',
-  $auth_uri                   = 'http://127.0.0.1:5000',
+  $auth_uri                   = 'http://127.0.0.1:5000/v3',
+  $user_domain_name           = 'Default',
+  $project_domain_name        = 'Default',
   $memcached_servers          = $::os_service_default,
   $purge_config               = false,
+  $amqp_durable_queues        = $::os_service_default,
   # Deprecated
   $identity_uri               = 'http://127.0.0.1:35357/',
   $rabbit_os_host             = $::os_service_default,
@@ -413,29 +433,40 @@ deprecated. Please use murano::default_transport_url instead.")
     }
   }
 
+  if $service_url {
+    $url = $service_url
+  }
+  else {
+    $url = "${service_protocol}://${service_host}:${service_port}"
+  }
+
   murano_config {
-    'murano/url' :                           value => "${_real_service_protocol}://${service_host}:${service_port}";
+    'murano/url' :            value => $url;
 
-    'engine/use_trusts' :                    value => $use_trusts;
+    'engine/use_trusts' :     value => $use_trusts;
 
-    'rabbitmq/login' :                       value => $rabbit_own_user;
-    'rabbitmq/password' :                    value => $rabbit_own_password;
-    'rabbitmq/host' :                        value => $rabbit_own_host;
-    'rabbitmq/port' :                        value => $rabbit_own_port;
-    'rabbitmq/virtual_host' :                value => $rabbit_own_vhost;
-    'rabbitmq/ssl' :                         value => $rabbit_own_use_ssl;
-    'rabbitmq/ca_certs' :                    value => $rabbit_own_ca_certs;
+    'rabbitmq/login' :        value => $rabbit_own_user;
+    'rabbitmq/password' :     value => $rabbit_own_password;
+    'rabbitmq/host' :         value => $rabbit_own_host;
+    'rabbitmq/port' :         value => $rabbit_own_port;
+    'rabbitmq/virtual_host' : value => $rabbit_own_vhost;
+    'rabbitmq/ssl' :          value => $rabbit_own_use_ssl;
+    'rabbitmq/ca_certs' :     value => $rabbit_own_ca_certs;
 
-    'keystone_authtoken/auth_uri' :          value => $auth_uri;
-    'keystone_authtoken/admin_user' :        value => $admin_user;
-    'keystone_authtoken/admin_tenant_name' : value => $admin_tenant_name;
-    'keystone_authtoken/admin_password' :    value => $admin_password;
-    'keystone_authtoken/identity_uri' :      value => $identity_uri;
-    'keystone_authtoken/memcached_servers':  value => join(any2array($memcached_servers), ',');
+    'networking/default_dns': value => $default_nameservers;
 
-    'networking/default_dns':                value => $default_nameservers;
+    'engine/packages_service': value => $packages_service,
+  }
 
-    'engine/packages_service':               value => $packages_service,
+  keystone::resource::authtoken { 'murano_config':
+    auth_uri            => $auth_uri,
+    auth_url            => $identity_uri,
+    username            => $admin_user,
+    password            => $admin_password,
+    project_name        => $admin_tenant_name,
+    user_domain_name    => $user_domain_name,
+    project_domain_name => $project_domain_name,
+    memcached_servers   => $memcached_servers,
   }
 
   oslo::messaging::rabbit { 'murano_config':
@@ -454,6 +485,7 @@ deprecated. Please use murano::default_transport_url instead.")
     rabbit_password         => $rabbit_os_password,
     rabbit_ha_queues        => $rabbit_ha_queues,
     rabbit_virtual_host     => $rabbit_os_virtual_host,
+    amqp_durable_queues     => $amqp_durable_queues,
   }
 
   oslo::messaging::default { 'murano_config':

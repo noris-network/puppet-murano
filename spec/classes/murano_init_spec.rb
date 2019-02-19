@@ -55,6 +55,7 @@ describe 'murano' do
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_reconnect_delay').with_value('<SERVICE DEFAULT>') }
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_failover_strategy').with_value('<SERVICE DEFAULT>') }
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_compression').with_value('<SERVICE DEFAULT>') }
+      it { is_expected.to contain_murano_config('oslo_messaging_rabbit/amqp_durable_queues').with_value('<SERVICE DEFAULT>') }
 
       it { is_expected.to contain_murano_config('rabbitmq/login').with_value('guest') }
       it { is_expected.to contain_murano_config('rabbitmq/password').with_value('guest') }
@@ -68,11 +69,13 @@ describe 'murano' do
       it { is_expected.to contain_murano_config('networking/create_router').with_value(true) }
       it { is_expected.to contain_murano_config('networking/external_network').with_value('public') }
 
-      it { is_expected.to contain_murano_config('keystone_authtoken/auth_uri').with_value('http://127.0.0.1:5000') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_user').with_value('murano') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_tenant_name').with_value('services') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_password').with_value('secrete') }
-      it { is_expected.not_to contain_murano_config('keystone_authtoken/identity_uri').with_value('http://10.255.0.1:35357/') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/auth_uri').with_value('http://127.0.0.1:5000/v3') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/username').with_value('murano') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/project_name').with_value('services') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/password').with_value('secrete') }
+      it { is_expected.not_to contain_murano_config('keystone_authtoken/auth_url').with_value('http://10.255.0.1:35357/') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/user_domain_name').with_value('Default') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/project_domain_name').with_value('Default') }
       it { is_expected.to contain_murano_config('keystone_authtoken/memcached_servers').with_value('<SERVICE DEFAULT>') }
       it { is_expected.to contain_murano_config('engine/packages_service').with_value('<SERVICE DEFAULT>') }
 
@@ -96,12 +99,14 @@ describe 'murano' do
         :rabbit_os_password         => 'ossecrete',
         :rabbit_ha_queues           => true,
         :rabbit_os_use_ssl          => true,
+        :amqp_durable_queues        => true,
         :rabbit_own_host            => '10.255.0.2',
         :rabbit_own_port            => '5674',
         :rabbit_own_user            => 'murano',
         :rabbit_own_password        => 'secrete',
         :rabbit_own_vhost           => 'murano_vhost',
         :rabbit_own_use_ssl         => true,
+        :service_url                => 'http://10.255.0.3:8088',
         :service_host               => '10.255.0.3',
         :service_port               => '8088',
         :packages_service           => 'glare',
@@ -119,6 +124,8 @@ describe 'murano' do
         :admin_tenant_name          => 'secrete',
         :auth_uri                   => 'http://10.255.0.1:5000/v2.0/',
         :identity_uri               => 'http://10.255.0.1:35357/',
+        :user_domain_name           => 'new_domain',
+        :project_domain_name        => 'new_domain',
         :kombu_reconnect_delay      => '1.0',
         :kombu_failover_strategy    => 'round-robin',
         :kombu_compression          => 'gzip',
@@ -140,7 +147,7 @@ describe 'murano' do
       it { is_expected.to contain_murano_config('oslo_messaging_notifications/topics').with_value('openstack') }
       it { is_expected.to contain_murano_config('oslo_messaging_notifications/driver').with_value('messagingv1') }
 
-      it { is_expected.to contain_murano_config('murano/url').with_value('https://10.255.0.3:8088') }
+      it { is_expected.to contain_murano_config('murano/url').with_value('http://10.255.0.3:8088') }
 
       it { is_expected.to contain_murano_config('engine/use_trusts').with_value(true) }
 
@@ -159,6 +166,7 @@ describe 'murano' do
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_reconnect_delay').with_value('1.0') }
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_failover_strategy').with_value('round-robin') }
       it { is_expected.to contain_murano_config('oslo_messaging_rabbit/kombu_compression').with_value('gzip') }
+      it { is_expected.to contain_murano_config('oslo_messaging_rabbit/amqp_durable_queues').with_value(true) }
 
       it { is_expected.to contain_murano_config('rabbitmq/login').with_value('murano') }
       it { is_expected.to contain_murano_config('rabbitmq/password').with_value('secrete') }
@@ -168,11 +176,13 @@ describe 'murano' do
       it { is_expected.to contain_murano_config('rabbitmq/ssl').with_value(true) }
 
       it { is_expected.to contain_murano_config('keystone_authtoken/auth_uri').with_value('http://10.255.0.1:5000/v2.0/') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_user').with_value('muranoy') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_tenant_name').with_value('secrete') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/identity_uri').with_value('http://10.255.0.1:35357/') }
-      it { is_expected.to contain_murano_config('keystone_authtoken/admin_password').with_value('secrete') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/username').with_value('muranoy') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/project_name').with_value('secrete') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/auth_url').with_value('http://10.255.0.1:35357/') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/password').with_value('secrete') }
       it { is_expected.to contain_murano_config('keystone_authtoken/memcached_servers').with_value('1.1.1.1:11211') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/user_domain_name').with_value('new_domain') }
+      it { is_expected.to contain_murano_config('keystone_authtoken/project_domain_name').with_value('new_domain') }
 
       it { is_expected.to contain_murano_config('networking/external_network').with_value('murano-net') }
       it { is_expected.to contain_murano_config('networking/router_name').with_value('murano-router') }

@@ -37,13 +37,23 @@ class Puppet::Provider::Murano < Puppet::Provider
 
   def self.get_murano_credentials
     #needed keys for authentication
-    auth_keys = ['auth_uri', 'admin_tenant_name', 'admin_user', 'admin_password']
+    auth_keys = ['auth_url', 'project_name', 'username', 'password']
     conf = murano_conf
     if conf and conf['keystone_authtoken'] and
         auth_keys.all?{|k| !conf['keystone_authtoken'][k].nil?}
       creds = Hash[ auth_keys.map { |k| [k, conf['keystone_authtoken'][k].strip] } ]
       if conf['engine'] and !conf['engine']['packages_service'].nil?
         creds['packages_service'] = conf['engine']['packages_service'].strip
+      end
+      if !conf['keystone_authtoken']['project_domain_name'].nil?
+        creds['project_domain_name'] = conf['keystone_authtoken']['project_domain_name'].strip
+      else
+        creds['project_domain_name'] = 'Default'
+      end
+      if !conf['keystone_authtoken']['user_domain_name'].nil?
+        creds['user_domain_name'] = conf['keystone_authtoken']['user_domain_name'].strip
+      else
+        creds['user_domain_name'] = 'Default'
       end
       return creds
     else
@@ -56,11 +66,13 @@ class Puppet::Provider::Murano < Puppet::Provider
   def self.auth_murano(*args)
     m = murano_credentials
     authenv = {
-        :OS_AUTH_URL      => m['auth_uri'],
-        :OS_USERNAME      => m['admin_user'],
-        :OS_TENANT_NAME   => m['admin_tenant_name'],
-        :OS_PASSWORD      => m['admin_password'],
-        :OS_ENDPOINT_TYPE => 'internalURL'
+        :OS_AUTH_URL            => m['auth_url'],
+        :OS_USERNAME            => m['username'],
+        :OS_TENANT_NAME         => m['project_name'],
+        :OS_PASSWORD            => m['password'],
+        :OS_ENDPOINT_TYPE       => 'internalURL',
+        :OS_PROJECT_DOMAIN_NAME => m['project_domain_name'],
+        :OS_USER_DOMAIN_NAME    => m['user_domain_name']
     }
     if m.key?('packages_service')
       authenv[:MURANO_PACKAGES_SERVICE] = m['packages_service']
